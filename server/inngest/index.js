@@ -60,7 +60,7 @@ const syncUserDeletion = inngest.createFunction(
     {
         id: 'delete-user-from-clerk'
     },
-    {event: 'clerk/user.delete'},
+    {event: 'clerk/user.deleted'},
     async ({event})=>{
         const {id} =event.data
        
@@ -86,14 +86,14 @@ await step.run('send-connection-request-mail', async()=>{
     </div>`
 
     await sendEmail({
-        to: connection.to_user_id.emial,
+        to: connection.to_user_id.email,
         subject,
         body
     })
 })
-const in24Hours = new Date(Date.now()+ 24 * 60 * 60 * 100)
+const in24Hours = new Date(Date.now()+ 24 * 60 * 60 * 1000)
 await step.sleepUntil("wait-for-24-hours", in24Hours)
-await step.run('send-conection-request-reminder', async()=>{
+await step.run('send-connection-request-reminder', async()=>{
     const connection = await Connection.findById(connectionId).populate('from_user_id to_user_id');
     if(connection.status === 'accepted'){
         return {message:'Allready accepted'}
@@ -109,7 +109,7 @@ await step.run('send-conection-request-reminder', async()=>{
     </div>`
 
     await sendEmail({
-        to: connection.to_user_id.emial,
+        to: connection.to_user_id.email,
         subject,
         body
     })
@@ -125,7 +125,7 @@ const deleteStory = inngest.createFunction(
     {event:'app/story.delete'},
         async({event, step})=>{
             const {storyId} = event.data;
-            const in24Hours = new Date( Date.now()+ 24 * 60 *60 *100)
+            const in24Hours = new Date( Date.now()+ 24 * 60 *60 *1000)
             await step.sleepUntil('wait-for-24-hours', in24Hours)
             await step.run("delete-story", async()=>{
                  await Story.findByIdAndDelete(storyId)
@@ -136,7 +136,7 @@ const deleteStory = inngest.createFunction(
 
 const sendNotificationOfUnseenMessages = inngest.createFunction(
     {id:'send-unseen-messages-notificaton'},
-    {cron: "TZ-America/New-York 0 9  * * *"}, //every day 9 Am)
+    { cron: "TZ=America/New_York 0 9 * * *" }, //every day 9 Am)
     async({step})=>{
         const messages = await Message.find({seen: false}).populate('to_user_id');
         const unseenCount = {}
@@ -150,7 +150,7 @@ const sendNotificationOfUnseenMessages = inngest.createFunction(
 
            const subject = `📩 You have ${unseenCount[userId]} unseen messages`
 
-           const body = ` <div style="font-family: Arial, sans-serif; padding:20px; >
+           const body = ` <div style="font-family: Arial, sans-serif; padding:20px;">
 <h2>Hi ${user.full_name},</h2>
            <p> You have ${unseenCount[userId]} unseen messages </p>
             <p>Click <a  href="${process.env.FRONTEND_URL}/messages" style="color:#10b981;"> here </a> to view them</p>
