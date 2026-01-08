@@ -4,36 +4,37 @@ import Message from '../models/Message.js';
  
 
 //Create an empty object to store server side Event connections
+ 
 const connections = {};
 
-//controller function for the (sse)  server side event endpoint 
-export const sseController = (req, res)=>{
-    const {userId} = req.params
-    console.log('new client connected:', userId)
+export const sseController = (req, res) => {
+  const { userId } = req.params;
+  console.log("new client connected:", userId);
 
-    // set (SSE) server side event headers
-    res.setHeaders('Content-Type', 'text/event-stream');
-    res.setHeaders('Cache-control', 'no-cache');
-    res.setHeaders('Connection', 'keep-alive');
-    res.setHeaders('Access-Control-Allow-Origin', '*');
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("Access-Control-Allow-Origin", "*");
 
+  if (res.flushHeaders) res.flushHeaders();
 
-    //add the clinet's response object to the connections object
-    connections[userId] = res
+  connections[userId] = res;
 
-    //send an initial event to the client
-    res.write('log: Connected to SSE stream\n\n');
-    
+  res.write(`event: connected\ndata: Connected to SSE stream\n\n`);
 
-    //handle client disconnection
-    req.on('close',()=>{
-        // Remove the client's response object from the connections array
-        delete connections[userId];
-        console.log('Client disconnected');
+  const keepAlive = setInterval(() => {
+    res.write(`event: keep-alive\n\n`);
+  }, 15000);
 
-    })
+  const cleanup = () => {
+    clearInterval(keepAlive);
+    delete connections[userId];
+    console.log("client disconnected:", userId);
+  };
 
-}
+  req.on("close", cleanup);
+  req.on("end", cleanup);
+};
 
 // send message
 export const sendMessage = async (req, res) => {
@@ -115,7 +116,7 @@ try {
 export const getUserRecentMessages = async(req,res)=>{
     try {
         const {userId} = req.auth();
-        const messages = await Message.find({to_user_id: userId}.populate('from_user_id to_user_id')).sort({created_at: -1});
+        const messages = await Message.find({to_user_id: userId}).populate('from_user_id to_user_id').sort({created_at: -1});
         res.json({ success: true, messages });
     } catch (error) {
         console.log(error);

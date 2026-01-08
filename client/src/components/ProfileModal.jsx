@@ -1,9 +1,15 @@
 import React, { useState } from 'react'
-import { dummyUserData } from '../assets/assets'
 import { Pencil } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { updateUser } from '../features/user/userSlice.js';
+import { useAuth } from '@clerk/clerk-react';
+import toast from 'react-hot-toast';
 
 const ProfileModal = ({setShowEdit}) => {
-    const user = dummyUserData;
+    const user = useSelector((state)=>state.user.value);
+
+    const dispatch = useDispatch();
+    const {getToken} = useAuth()
 
     const [editForm, setEditForm] = useState({
         username: user.username,
@@ -16,6 +22,24 @@ const ProfileModal = ({setShowEdit}) => {
 
     const handleSaveProfile = async (e) => {
         e.preventDefault();
+        try {
+            const userData = new FormData();
+            const {full_name, bio, location, username, profile_picture, cover_photo} = editForm
+
+            userData.append('username',username);
+            userData.append('loction',location);
+            userData.append('bio',bio);
+            userData.append('full_name',full_name);
+            profile_picture && userData.append('profile', profile_picture)
+            cover_photo && userData.append('cover', cover_photo)
+
+
+            const token = await getToken()
+            dispatch(updateUser({userData, token}))
+            setShowEdit(false)
+        } catch (error) {
+            toast.error(error.message)
+        }
 
     }
     return (
@@ -24,7 +48,7 @@ const ProfileModal = ({setShowEdit}) => {
                 <div className='bg-white rounded-lg shadow p-6'>
                     <h1 className='text-2xl font-bold text-gray-900 mb-6'>Edit Profile</h1>
 
-                    <form className='space-y-4' onSubmit={handleSaveProfile}>
+                    <form className='space-y-4' onSubmit={e=>toast.promise(handleSaveProfile(e),{loading: 'Saving...'})}>
 
                         {/* profile picture  */}
                         <div className='flex flex-col items-start gap-3'>

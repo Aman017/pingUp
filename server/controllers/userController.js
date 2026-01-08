@@ -109,7 +109,7 @@ export const discoverUsers = async(req,res)=>{
             ]
         })
         const filterUsers = allUsers.filter(user=> user._id !== userId);
-        res.json({success:true, message:filterUsers})
+        res.json({success:true, users:filterUsers})
     } catch (error) {
         console.log(error)
           return res.json({success:false, message:error.message})
