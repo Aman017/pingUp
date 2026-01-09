@@ -1,9 +1,8 @@
 import React, { useState } from 'react' 
 import { Outlet } from 'react-router-dom'
 import { Menu, X } from 'lucide-react';
-import { dummyUserData } from '../assets/assets';
 import Loading from '../components/Loading';
-import Sidebar from '../components/sidebar';
+import Sidebar from '../components/Sidebar';
 import { useSelector } from 'react-redux';
 
 const Layout = () => {
